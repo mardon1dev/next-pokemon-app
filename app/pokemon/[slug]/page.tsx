@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
@@ -140,7 +141,7 @@ const SinglePage = () => {
           })}
         </div>
         <div>
-          <img
+          <Image
             src={singlePokemon.image}
             alt={singlePokemon.name}
             className="h-[400px] object-cover"
