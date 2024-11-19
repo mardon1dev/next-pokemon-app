@@ -45,7 +45,7 @@ const Pokemon = () => {
   }
 
   return (
-    <div className="px-[40px] py-[20px] mt-[100px]">
+    <div className="px-[40px] py-[40px] mt-[100px]">
       <h1 className="text-[32px]">Pokemons</h1>
       <ul className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 justify-between lg:gap-10 sm:gap-5 gap-0 mt-5">
         {pokemons.map((pokemon) => (

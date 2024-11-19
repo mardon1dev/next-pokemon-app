@@ -36,7 +36,13 @@ interface PokemonData {
 
 interface PokemonInfoDetail {
   id?: number;
-  description: string;
+  flavor_text: string;
+}
+
+interface PokemonAbilities {
+  ability: {
+    name: string;
+  };
 }
 
 const SinglePage = () => {
@@ -47,73 +53,69 @@ const SinglePage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchPokemon() {
+    async function fetchPokemonData() {
       try {
-        const url = `https://pokeapi.co/api/v2/pokemon/${slug}`;
-        const response = await fetch(url);
-        const data = await response.json();
+        const [pokemonResponse, speciesResponse] = await Promise.all([
+          fetch(`https://pokeapi.co/api/v2/pokemon/${slug}`),
+          fetch(`https://pokeapi.co/api/v2/pokemon-species/${slug}`),
+        ]);
+        const pokemonData = await pokemonResponse.json();
+        const speciesData = await speciesResponse.json();
 
         const pokemon: PokemonData = {
-          id: data.id,
-          name: data.name,
-          image: data.sprites.other["official-artwork"].front_default,
-          type: data.types,
-          abilities: data.abilities
-            .map((ability: any) => ability.ability.name)
+          id: pokemonData.id,
+          name: pokemonData.name,
+          image: pokemonData.sprites.other["official-artwork"].front_default,
+          type: pokemonData.types,
+          abilities: pokemonData.abilities
+            .map((ability: PokemonAbilities) => ability?.ability?.name)
             .join(" - "),
           info: {
-            height: data.height,
-            weight: data.weight,
-            experience: data.base_experience,
+            height: pokemonData.height,
+            weight: pokemonData.weight,
+            experience: pokemonData.base_experience,
           },
           stats: {
-            health: data.stats[0].base_stat,
-            attack: data.stats[1].base_stat,
-            defense: data.stats[2].base_stat,
-            speed: data.stats[5].base_stat,
+            health: pokemonData.stats[0]?.base_stat || 0,
+            attack: pokemonData.stats[1]?.base_stat || 0,
+            defense: pokemonData.stats[2]?.base_stat || 0,
+            speed: pokemonData.stats[5]?.base_stat || 0,
           },
         };
 
+        const details = speciesData.flavor_text_entries
+          .slice(0, 10)
+          .map((entry: PokemonInfoDetail, index: number) => ({
+            id: index + 1,
+            flavor_text: entry.flavor_text,
+          }));
+
         setSinglePokemon(pokemon);
+        setPokemonInfo(details);
       } catch (error) {
-        console.error("Error fetching Pokémon:", error);
+        console.error("Error fetching Pokémon data:", error);
       } finally {
         setLoading(false);
       }
     }
-    async function fetchInfo() {
-      try {
-        const details = [];
-        const url = `https://pokeapi.co/api/v2/pokemon-species/${slug}`;
-        const response = await fetch(url);
-        const data = await response.json();
-        for (let i = 1; i <= 10; i++) {
-          const info: PokemonInfoDetail = {
-            description: data.flavor_text_entries[i].flavor_text,
-          };
-          details.push({
-            ...info,
-            id: i,
-          });
-        }
-        setPokemonInfo(details);
-      } catch (error) {
-        console.error("Error fetching info:", error);
-      } finally {
-        // setLoading(false);
-      }
-    }
 
-    fetchPokemon();
-    fetchInfo();
+    fetchPokemonData();
   }, [slug]);
 
   if (loading) {
-    return <p>Loading...</p>;
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
   }
 
   if (!singlePokemon) {
-    return <p>Pokémon not found!</p>;
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <p>No Pokemon found!</p>
+      </div>
+    );
   }
 
   return (
@@ -135,7 +137,7 @@ const SinglePage = () => {
           {pokemonInfo.map((item: PokemonInfoDetail) => {
             return (
               <div key={item.id} className="mb-4">
-                <p className="text-sm">{item.description.replace("", " ")}</p>
+                <p className="text-sm">{item.flavor_text}</p>
               </div>
             );
           })}
@@ -147,6 +149,7 @@ const SinglePage = () => {
             className="h-[400px] object-cover"
             width={400}
             height={400}
+            priority
           />
         </div>
         <div>
